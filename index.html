@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Club Ratings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --card-hover: #22223a;
+      --accent: #e94560;
+      --gold: #f5c518;
+      --text: #e0e0e0;
+      --text-muted: #8888a0;
+      --border: #2a2a40;
+      --success: #4ade80;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Sign-in Screen */
+    .signin-screen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, var(--bg) 70%);
+    }
+
+    .signin-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      animation: fadeInUp 0.6s ease;
+    }
+
+    .signin-card h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .signin-card p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .signin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #fff;
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .signin-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(233, 69, 96, 0.3);
+    }
+
+    .signin-btn svg { width: 20px; height: 20px; }
+
+    /* App Container */
+    .app { display: none; }
+    .app.visible { display: block; }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .header-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--gold));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .member-select, .sort-select, .filter-select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+    }
+
+    .member-select:focus, .sort-select:focus, .filter-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .signout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .signout-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      padding: 1.5rem 2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      animation: fadeInUp 0.5s ease both;
+    }
+
+    .stat-card:nth-child(2) { animation-delay: 0.05s; }
+    .stat-card:nth-child(3) { animation-delay: 0.1s; }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0 2rem 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      flex: 1;
+      min-width: 180px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-accent:hover { background: #d13a52; transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Book Grid */
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+      padding: 0 2rem 2rem;
+    }
+
+    .book-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeInUp 0.5s ease both;
+      position: relative;
+    }
+
+    .book-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .book-card-top {
+      display: flex;
+      gap: 1rem;
+      padding: 1.25rem;
+    }
+
+    .book-cover {
+      width: 80px;
+      height: 120px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--border);
+    }
+
+    .book-cover-placeholder {
+      width: 80px;
+      height: 120px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .book-info { flex: 1; min-width: 0; }
+
+    .book-rank-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .book-rank-badge.top3 {
+      background: linear-gradient(135deg, var(--gold), #e6a800);
+      color: #1a1a2e;
+    }
+
+    .book-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .book-category {
+      display: inline-block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(233, 69, 96, 0.15);
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .book-average {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .avg-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .avg-stars {
+      color: var(--gold);
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    .avg-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-left: 0.25rem;
+    }
+
+    .book-card-bottom {
+      padding: 0 1.25rem 1.25rem;
+    }
+
+    .user-rating-section {
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      padding: 0.75rem;
+    }
+
+    .user-rating-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .user-rating-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .user-rating-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .hot-take {
+      font-size: 0.7rem;
+      color: var(--accent);
+      font-weight: 600;
+      animation: pulse 1.5s infinite;
+    }
+
+    .tap-to-rate {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .tap-to-rate:hover { color: var(--gold); }
+
+    .comparison-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 0.5rem;
+      position: relative;
+      overflow: visible;
+    }
+
+    .comparison-avg-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 10px;
+      background: var(--gold);
+      border-radius: 1px;
+      transition: left 0.3s;
+    }
+
+    .comparison-user-marker {
+      position: absolute;
+      top: -4px;
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 2px solid var(--card);
+      transition: left 0.3s;
+      transform: translateX(-50%);
+    }
+
+    /* Rating Widget */
+    .rating-widget {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .rating-widget.open { display: flex; }
+
+    .star-row {
+      display: flex;
+      gap: 2px;
+    }
+
+    .star-btn {
+      width: 28px;
+      height: 28px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      font-size: 0;
+      padding: 0;
+    }
+
+    .star-btn svg {
+      width: 28px;
+      height: 28px;
+      transition: transform 0.15s;
+    }
+
+    .star-btn:hover svg { transform: scale(1.2); }
+
+    .star-btn .star-half-left,
+    .star-btn .star-half-right {
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      z-index: 1;
+      cursor: pointer;
+    }
+
+    .star-btn .star-half-left { left: 0; }
+    .star-btn .star-half-right { right: 0; }
+
+    .rating-display {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gold);
+      min-width: 2rem;
+      text-align: center;
+    }
+
+    .confirm-rating-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 1.2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .confirm-rating-btn:hover { background: #d13a52; }
+
+    /* Loading Skeletons */
+    .skeleton {
+      background: linear-gradient(90deg, var(--card) 25%, var(--card-hover) 50%, var(--card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius);
+    }
+
+    .skeleton-card { height: 200px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 1rem;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: fadeInUp 0.3s ease;
+    }
+
+    .modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-close {
+      float: right;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Everyone's Votes */
+    .votes-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .votes-toggle:hover { color: var(--text); border-color: var(--accent); }
+
+    .votes-toggle .arrow {
+      transition: transform 0.3s;
+      font-size: 0.65rem;
+    }
+
+    .votes-toggle.open .arrow { transform: rotate(180deg); }
+
+    .votes-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    .votes-panel.open {
+      max-height: 500px;
+      opacity: 1;
+    }
+
+    .votes-list {
+      padding-top: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .vote-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.02);
+      animation: fadeInUp 0.3s ease both;
+    }
+
+    .vote-name {
+      font-size: 0.8rem;
+      font-weight: 500;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .vote-bar-bg {
+      flex: 1.5;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .vote-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .vote-value {
+      font-size: 0.8rem;
+      font-weight: 600;
+      min-width: 2rem;
+      text-align: right;
+      color: var(--gold);
+    }
+
+    .vote-value.empty {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header { padding: 1rem; }
+      .header-title { font-size: 1.2rem; }
+      .stats-bar { padding: 1rem; gap: 0.75rem; }
+      .controls-bar { padding: 0 1rem 1rem; }
+      .book-grid { padding: 0 1rem 1rem; grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+      .header { flex-direction: column; align-items: flex-start; }
+      .header-right { width: 100%; flex-wrap: wrap; }
+      .member-select { flex: 1; }
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sign-in Screen -->
+  <div class="signin-screen" id="signinScreen">
+    <div class="signin-card">
+      <h1>Book Club</h1>
+      <p>Sign in with Google to rate books and see everyone's picks.</p>
+      <button class="signin-btn" id="signinBtn" onclick="handleSignIn()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div class="app" id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-title">Book Club</div>
+      <div class="header-right">
+        <select class="member-select" id="memberSelect" onchange="handleMemberChange()">
+          <option value="">Select member...</option>
+        </select>
+        <button class="signout-btn" onclick="handleSignOut()">Sign Out</button>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-bar" id="statsBar"></div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <input class="search-input" type="text" id="searchInput" placeholder="Search books..." oninput="renderBooks()">
+      <select class="filter-select" id="filterSelect" onchange="renderBooks()">
+        <option value="all">All</option>
+        <option value="fiction">Fiction</option>
+        <option value="non-fiction">Non-fiction</option>
+      </select>
+      <select class="sort-select" id="sortSelect" onchange="renderBooks()">
+        <option value="rank">By Rank</option>
+        <option value="title">By Title</option>
+        <option value="highest">Highest Rated</option>
+        <option value="lowest">Lowest Rated</option>
+        <option value="unrated">Unrated by Me</option>
+      </select>
+      <button class="btn btn-accent" onclick="openModal('addBookModal')">+ Add Book</button>
+    </div>
+
+    <!-- Book Grid -->
+    <div class="book-grid" id="bookGrid"></div>
+  </div>
+
+  <!-- Add Book Modal -->
+  <div class="modal-overlay" id="addBookModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('addBookModal')">&times;</button>
+      <h2>Add a Book</h2>
+      <div class="form-group">
+        <label for="newBookTitle">Title</label>
+        <input type="text" id="newBookTitle" placeholder="Enter book title">
+      </div>
+      <div class="form-group">
+        <label for="newBookCategory">Category</label>
+        <select id="newBookCategory">
+          <option value="Fiction">Fiction</option>
+          <option value="Non-fiction">Non-fiction</option>
+        </select>
+      </div>
+      <button class="btn btn-accent" style="width:100%;margin-top:0.5rem" onclick="handleAddBook()">Add Book</button>
+    </div>
+  </div>
+
+  <script>
+    // ==================== CONFIG ====================
+    const CONFIG = {
+      CLIENT_ID: '351259318662-d21va0sjcu5g9qihi7ilglgjrbdk26pq.apps.googleusercontent.com',
+      SPREADSHEET_ID: '1aOV6-bzK0EnxUa94ds0vkf6yaMQCgGAeo9RNS73rYmw',
+      SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
+      DISCOVERY_DOC: 'https://sheets.googleapis.com/$discovery/rest?version=v4',
+    };
+
+    // ==================== STATE ====================
+    let state = {
+      members: [],
+      books: [],
+      currentMember: localStorage.getItem('bookclub_member') || '',
+      tokenClient: null,
+      gapiInited: false,
+      gisInited: false,
+    };
+
+    // ==================== AUTH ====================
+    function initGapiClient() {
+      gapi.load('client', async () => {
+        await gapi.client.init({
+          discoveryDocs: [CONFIG.DISCOVERY_DOC],
+        });
+        state.gapiInited = true;
+        maybeEnableSignIn();
+      });
+    }
+
+    function initGIS() {
+      state.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CONFIG.CLIENT_ID,
+        scope: CONFIG.SCOPES,
+        callback: handleTokenResponse,
+      });
+      state.gisInited = true;
+      maybeEnableSignIn();
+    }
+
+    function maybeEnableSignIn() {
+      if (state.gapiInited && state.gisInited) {
+        document.getElementById('signinBtn').disabled = false;
+      }
+    }
+
+    function handleSignIn() {
+      state.tokenClient.requestAccessToken();
+    }
+
+    function handleTokenResponse(resp) {
+      if (resp.error) {
+        console.error('Token error:', resp);
+        return;
+      }
+      document.getElementById('signinScreen').style.display = 'none';
+      document.getElementById('app').classList.add('visible');
+      fetchSheetData();
+    }
+
+    function handleSignOut() {
+      const token = gapi.client.getToken();
+      if (token) {
+        google.accounts.oauth2.revoke(token.access_token);
+        gapi.client.setToken(null);
+      }
+      document.getElementById('signinScreen').style.display = '';
+      document.getElementById('app').classList.remove('visible');
+      state.books = [];
+      state.members = [];
+    }
+
+    // Retry wrapper for token expiry
+    async function apiCall(fn) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (err.status === 401) {
+          return new Promise((resolve, reject) => {
+            state.tokenClient.callback = (resp) => {
+              if (resp.error) return reject(resp);
+              state.tokenClient.callback = handleTokenResponse;
+              fn().then(resolve).catch(reject);
+            };
+            state.tokenClient.requestAccessToken({ prompt: '' });
+          });
+        }
+        throw err;
+      }
+    }
+
+    // ==================== DATA ====================
+    async function fetchSheetData() {
+      showLoadingSkeletons();
+      const response = await apiCall(() =>
+        gapi.client.sheets.spreadsheets.values.get({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          range: 'Sheet1!A1:L200',
+        })
+      );
+
+      const rows = response.result.values || [];
+      if (rows.length < 4) return;
+
+      // Row 2 (index 1) = headers
+      const headers = rows[1];
+      state.members = headers.slice(4); // columns E+ (index 4+)
+
+      // Populate member dropdown
+      const sel = document.getElementById('memberSelect');
+      sel.innerHTML = '<option value="">Select member...</option>';
+      state.members.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      });
+
+      if (state.currentMember && state.members.includes(state.currentMember)) {
+        sel.value = state.currentMember;
+      }
+
+      // Parse books from rows 4+ (index 3+)
+      state.books = [];
+      for (let i = 3; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row[0]) continue; // skip empty rows
+        const ratings = {};
+        state.members.forEach((member, j) => {
+          const val = row[4 + j];
+          ratings[member] = val ? parseFloat(val) : null;
+        });
+        state.books.push({
+          rowIndex: i + 1, // 1-indexed for Sheets
+          title: row[0] || '',
+          category: row[1] || '',
+          rank: row[2] ? parseFloat(row[2]) : null,
+          average: row[3] ? parseFloat(row[3]) : null,
+          ratings,
+        });
+      }
+
+      renderStats();
+      renderBooks();
+    }
+
+    async function submitRating(bookRowIndex, memberName, value) {
+      const colIndex = 4 + state.members.indexOf(memberName);
+      const colLetter = String.fromCharCode(65 + colIndex);
+      const range = `Sheet1!${colLetter}${bookRowIndex}`;
+
+      await apiCall(() =>
+        gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          range: range,
+          valueInputOption: 'USER_ENTERED',
+          resource: { values: [[value]] },
+        })
+      );
+
+      // Optimistic update
+      const book = state.books.find(b => b.rowIndex === bookRowIndex);
+      if (book) book.ratings[memberName] = value;
+
+      fireConfetti();
+      renderBooks();
+
+      // Re-fetch for fresh averages
+      await fetchSheetData();
+
+      // Check if all rated
+      if (state.currentMember) {
+        const allRated = state.books.every(b => b.ratings[state.currentMember] != null);
+        if (allRated) {
+          setTimeout(() => fireConfetti(true), 300);
+        }
+      }
+    }
+
+    async function handleAddBook() {
+      const title = document.getElementById('newBookTitle').value.trim();
+      const category = document.getElementById('newBookCategory').value;
+      if (!title) return;
+
+      await apiCall(() =>
+        gapi.client.sheets.spreadsheets.values.append({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          range: 'Sheet1!A:B',
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          resource: { values: [[title, category]] },
+        })
+      );
+
+      document.getElementById('newBookTitle').value = '';
+      closeModal('addBookModal');
+      await fetchSheetData();
+    }
+
+    // ==================== RENDERING ====================
+    function showLoadingSkeletons() {
+      const grid = document.getElementById('bookGrid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 6; i++) {
+        const sk = document.createElement('div');
+        sk.className = 'skeleton skeleton-card';
+        grid.appendChild(sk);
+      }
+    }
+
+    function renderBooks() {
+      const grid = document.getElementById('bookGrid');
+      grid.innerHTML = '';
+
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filter = document.getElementById('filterSelect').value;
+      const sort = document.getElementById('sortSelect').value;
+      const member = state.currentMember;
+
+      let books = [...state.books];
+
+      // Search
+      if (query) {
+        books = books.filter(b => b.title.toLowerCase().includes(query));
+      }
+
+      // Filter
+      if (filter === 'fiction') {
+        books = books.filter(b => b.category.toLowerCase().includes('fiction') && !b.category.toLowerCase().includes('non'));
+      } else if (filter === 'non-fiction') {
+        books = books.filter(b => b.category.toLowerCase().includes('non'));
+      }
+
+      // Sort
+      switch (sort) {
+        case 'rank':
+          books.sort((a, b) => (a.rank || 999) - (b.rank || 999));
+          break;
+        case 'title':
+          books.sort((a, b) => a.title.localeCompare(b.title));
+          break;
+        case 'highest':
+          books.sort((a, b) => (b.average || 0) - (a.average || 0));
+          break;
+        case 'lowest':
+          books.sort((a, b) => (a.average || 0) - (b.average || 0));
+          break;
+        case 'unrated':
+          books.sort((a, b) => {
+            const aRated = member && a.ratings[member] != null ? 1 : 0;
+            const bRated = member && b.ratings[member] != null ? 1 : 0;
+            return aRated - bRated;
+          });
+          break;
+      }
+
+      books.forEach((book, i) => {
+        const card = createBookCard(book, i);
+        grid.appendChild(card);
+      });
+    }
+
+    const coverGradients = [
+      'linear-gradient(135deg, #e94560, #0f3460)',
+      'linear-gradient(135deg, #f5c518, #e94560)',
+      'linear-gradient(135deg, #0f3460, #16213e)',
+      'linear-gradient(135deg, #533483, #e94560)',
+      'linear-gradient(135deg, #0f3460, #533483)',
+      'linear-gradient(135deg, #e94560, #533483)',
+    ];
+
+    function createBookCard(book, index) {
+      const card = document.createElement('div');
+      card.className = 'book-card';
+      card.style.animationDelay = `${index * 0.05}s`;
+
+      const member = state.currentMember;
+      const userRating = member ? book.ratings[member] : null;
+      const avg = book.average;
+      const isHotTake = userRating != null && avg != null && Math.abs(userRating - avg) >= 3;
+      const rankClass = book.rank && book.rank <= 3 ? 'top3' : '';
+
+      // Stars for average
+      const starCount = avg != null ? Math.round(avg) : 0;
+      const starsHtml = avg != null
+        ? '&#9733;'.repeat(Math.min(starCount, 10)) + '&#9734;'.repeat(Math.max(10 - starCount, 0))
+        : '';
+
+      const gradient = coverGradients[book.title.length % coverGradients.length];
+      const firstLetter = book.title.charAt(0).toUpperCase();
+      const encodedTitle = encodeURIComponent(book.title);
+      const coverId = `cover-${book.rowIndex}`;
+
+      card.innerHTML = `
+        <div class="book-card-top">
+          <img class="book-cover" id="${coverId}"
+               src="https://covers.openlibrary.org/b/title/${encodedTitle}-M.jpg"
+               alt="${book.title}"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+               onload="if(this.naturalWidth<=1){this.style.display='none';this.nextElementSibling.style.display='flex';}">
+          <div class="book-cover-placeholder" style="display:none;background:${gradient}">${firstLetter}</div>
+          <div class="book-info">
+            ${book.rank != null ? `<div class="book-rank-badge ${rankClass}">#${book.rank}</div>` : ''}
+            <div class="book-title">${escapeHtml(book.title)}</div>
+            ${book.category ? `<div class="book-category">${escapeHtml(book.category)}</div>` : ''}
+            <div class="book-average">
+              <span class="avg-number">${avg != null ? avg.toFixed(1) : '—'}</span>
+              <span class="avg-stars">${starsHtml}</span>
+              ${avg != null ? '<span class="avg-label">avg</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div class="book-card-bottom">
+          <div class="user-rating-section">
+            <div class="user-rating-header">
+              <span class="user-rating-label">Your Rating</span>
+              ${userRating != null
+                ? `<span class="user-rating-value">${userRating.toFixed(1)}</span>`
+                : ''}
+              ${isHotTake ? '<span class="hot-take">HOT TAKE</span>' : ''}
+            </div>
+            ${member
+              ? userRating != null
+                ? `<div class="tap-to-rate" onclick="toggleRatingWidget(this, ${book.rowIndex})">Tap to change</div>`
+                : `<div class="tap-to-rate" onclick="toggleRatingWidget(this, ${book.rowIndex})">Tap to rate</div>`
+              : '<div style="color:var(--text-muted);font-size:0.8rem;">Select a member to rate</div>'}
+            ${member && userRating != null && avg != null ? `
+              <div class="comparison-bar">
+                <div class="comparison-avg-marker" style="left:${(avg / 10) * 100}%"></div>
+                <div class="comparison-user-marker" style="left:${(userRating / 10) * 100}%"></div>
+              </div>
+            ` : ''}
+            <div class="rating-widget" id="rw-${book.rowIndex}">
+              ${buildStarWidget(book.rowIndex, userRating)}
+            </div>
+          </div>
+          ${buildVotesPanel(book)}
+        </div>
+      `;
+
+      return card;
+    }
+
+    function buildStarWidget(rowIndex, existingRating) {
+      let html = '<div class="star-row">';
+      for (let i = 1; i <= 10; i++) {
+        const full = existingRating != null && i <= Math.floor(existingRating);
+        const half = existingRating != null && i === Math.ceil(existingRating) && existingRating % 1 !== 0;
+        html += `
+          <button class="star-btn" data-star="${i}">
+            <svg viewBox="0 0 24 24">
+              ${full || half ? `
+                <defs>
+                  <linearGradient id="sg-${rowIndex}-${i}">
+                    <stop offset="${half ? '50%' : '100%'}" stop-color="#f5c518"/>
+                    <stop offset="${half ? '50%' : '100%'}" stop-color="#3a3a50"/>
+                  </linearGradient>
+                </defs>
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#sg-${rowIndex}-${i})" stroke="#f5c518" stroke-width="0.5"/>
+              ` : `
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#3a3a50" stroke="#555" stroke-width="0.5"/>
+              `}
+            </svg>
+            <span class="star-half-left" onclick="event.stopPropagation();setPreviewRating(${rowIndex},${i - 0.5})"></span>
+            <span class="star-half-right" onclick="event.stopPropagation();setPreviewRating(${rowIndex},${i})"></span>
+          </button>`;
+      }
+      html += '</div>';
+      html += `<div class="rating-display" id="rd-${rowIndex}">${existingRating != null ? existingRating.toFixed(1) : '—'}</div>`;
+      html += `<button class="confirm-rating-btn" onclick="confirmRating(${rowIndex})">Confirm</button>`;
+      return html;
+    }
+
+    function buildVotesPanel(book) {
+      const voteColors = ['#e94560', '#f5c518', '#533483', '#4ade80', '#38bdf8', '#fb923c', '#a78bfa', '#f472b6'];
+      let rows = '';
+      state.members.forEach((name, i) => {
+        const val = book.ratings[name];
+        const color = voteColors[i % voteColors.length];
+        const pct = val != null ? (val / 10) * 100 : 0;
+        rows += `
+          <div class="vote-row" style="animation-delay:${i * 0.04}s">
+            <span class="vote-name">${escapeHtml(name)}</span>
+            <div class="vote-bar-bg">
+              <div class="vote-bar-fill" style="width:${pct}%;background:${color}"></div>
+            </div>
+            <span class="vote-value ${val == null ? 'empty' : ''}">${val != null ? val.toFixed(1) : '—'}</span>
+          </div>`;
+      });
+
+      return `
+        <div class="votes-toggle" onclick="toggleVotesPanel(this, ${book.rowIndex})">
+          <span>Everyone's Votes</span>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div class="votes-panel" id="vp-${book.rowIndex}">
+          <div class="votes-list">${rows}</div>
+        </div>`;
+    }
+
+    function toggleVotesPanel(toggle, rowIndex) {
+      toggle.classList.toggle('open');
+      document.getElementById(`vp-${rowIndex}`).classList.toggle('open');
+    }
+
+    let pendingRatings = {};
+
+    function toggleRatingWidget(el, rowIndex) {
+      const widget = document.getElementById(`rw-${rowIndex}`);
+      widget.classList.toggle('open');
+    }
+
+    function setPreviewRating(rowIndex, value) {
+      pendingRatings[rowIndex] = value;
+      const display = document.getElementById(`rd-${rowIndex}`);
+      if (display) display.textContent = value.toFixed(1);
+
+      // Update star visuals
+      const widget = document.getElementById(`rw-${rowIndex}`);
+      const stars = widget.querySelectorAll('.star-btn');
+      stars.forEach((btn, idx) => {
+        const starNum = idx + 1;
+        const svg = btn.querySelector('svg');
+        const full = starNum <= Math.floor(value);
+        const half = starNum === Math.ceil(value) && value % 1 !== 0;
+        if (full) {
+          svg.innerHTML = `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#f5c518" stroke="#f5c518" stroke-width="0.5"/>`;
+        } else if (half) {
+          svg.innerHTML = `
+            <defs><linearGradient id="sp-${rowIndex}-${starNum}"><stop offset="50%" stop-color="#f5c518"/><stop offset="50%" stop-color="#3a3a50"/></linearGradient></defs>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#sp-${rowIndex}-${starNum})" stroke="#f5c518" stroke-width="0.5"/>`;
+        } else {
+          svg.innerHTML = `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#3a3a50" stroke="#555" stroke-width="0.5"/>`;
+        }
+      });
+    }
+
+    async function confirmRating(rowIndex) {
+      const value = pendingRatings[rowIndex];
+      if (value == null || !state.currentMember) return;
+      delete pendingRatings[rowIndex];
+      await submitRating(rowIndex, state.currentMember, value);
+    }
+
+    function renderStats() {
+      const bar = document.getElementById('statsBar');
+      bar.innerHTML = '';
+      const member = state.currentMember;
+      const books = state.books;
+
+      // Books rated
+      let ratedCount = 0;
+      if (member) {
+        ratedCount = books.filter(b => b.ratings[member] != null).length;
+      }
+
+      // Highest rated
+      const withAvg = books.filter(b => b.average != null && !isNaN(b.average));
+      const highest = withAvg.length ? withAvg.reduce((a, b) => a.average > b.average ? a : b) : null;
+      const lowest = withAvg.length ? withAvg.reduce((a, b) => a.average < b.average ? a : b) : null;
+
+      const stats = [
+        { label: 'Books Rated', value: member ? `${ratedCount} / ${books.length}` : '—' },
+        { label: 'Highest Rated', value: highest ? `${highest.title.substring(0, 25)}${highest.title.length > 25 ? '...' : ''} (${highest.average.toFixed(1)})` : '—' },
+        { label: 'Lowest Rated', value: lowest ? `${lowest.title.substring(0, 25)}${lowest.title.length > 25 ? '...' : ''} (${lowest.average.toFixed(1)})` : '—' },
+      ];
+
+      stats.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'stat-card';
+        div.innerHTML = `<div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div>`;
+        bar.appendChild(div);
+      });
+    }
+
+    // ==================== MEMBER SELECTION ====================
+    function handleMemberChange() {
+      const sel = document.getElementById('memberSelect');
+      state.currentMember = sel.value;
+      localStorage.setItem('bookclub_member', sel.value);
+      renderStats();
+      renderBooks();
+    }
+
+    // ==================== MODALS ====================
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    // Close modal on overlay click
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        e.target.classList.remove('open');
+      }
+    });
+
+    // ==================== CONFETTI ====================
+    function fireConfetti(mega = false) {
+      const colors = ['#e94560', '#f5c518', '#533483'];
+      if (mega) {
+        const end = Date.now() + 1500;
+        (function frame() {
+          confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors });
+          confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+      } else {
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 }, colors });
+      }
+    }
+
+    // ==================== UTILS ====================
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ==================== INIT ====================
+    window.onload = () => {
+      initGapiClient();
+      initGIS();
+    };
+  </script>
+</body>
+</html>
