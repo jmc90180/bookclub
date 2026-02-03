@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Club Ratings</title>
+  <title>Bookchela</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
@@ -139,6 +139,11 @@
       cursor: pointer;
     }
 
+    .member-select:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
     .member-select:focus, .sort-select:focus, .filter-select:focus {
       outline: none;
       border-color: var(--accent);
@@ -161,6 +166,46 @@
       color: var(--accent);
     }
 
+    #memberError {
+      display: none;
+      color: var(--accent);
+      font-size: 0.8rem;
+      padding: 0.5rem 2rem;
+      background: rgba(233, 69, 96, 0.1);
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
     /* Stats Bar */
     .stats-bar {
       display: grid;
@@ -175,6 +220,8 @@
       border-radius: var(--radius);
       padding: 1rem 1.25rem;
       animation: fadeInUp 0.5s ease both;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .stat-card:nth-child(2) { animation-delay: 0.05s; }
@@ -191,9 +238,9 @@
     .stat-value {
       font-size: 1.1rem;
       font-weight: 600;
-      white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Controls Bar */
@@ -246,10 +293,23 @@
 
     .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
+    .btn-danger {
+      background: transparent;
+      border: 1px solid #dc2626;
+      color: #dc2626;
+    }
+
+    .btn-danger:hover { background: rgba(220, 38, 38, 0.1); }
+
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+    }
+
     /* Book Grid */
     .book-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
       gap: 1.25rem;
       padding: 0 2rem 2rem;
     }
@@ -298,7 +358,7 @@
       color: #fff;
     }
 
-    .book-info { flex: 1; min-width: 0; }
+    .book-info { flex: 1; min-width: 0; overflow: hidden; }
 
     .book-rank-badge {
       display: inline-block;
@@ -344,6 +404,7 @@
       display: flex;
       align-items: center;
       gap: 0.4rem;
+      flex-wrap: wrap;
     }
 
     .avg-number {
@@ -356,6 +417,7 @@
       color: var(--gold);
       font-size: 0.85rem;
       letter-spacing: 1px;
+      flex-wrap: wrap;
     }
 
     .avg-label {
@@ -366,12 +428,14 @@
 
     .book-card-bottom {
       padding: 0 1.25rem 1.25rem;
+      overflow: hidden;
     }
 
     .user-rating-section {
       background: rgba(255,255,255,0.03);
       border-radius: 8px;
       padding: 0.75rem;
+      overflow: hidden;
     }
 
     .user-rating-header {
@@ -457,44 +521,88 @@
       gap: 2px;
     }
 
-    .star-btn {
-      width: 28px;
-      height: 28px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      position: relative;
-      font-size: 0;
-      padding: 0;
+    .star-display {
+      display: inline-flex;
+      gap: 1px;
+      flex-shrink: 0;
     }
 
-    .star-btn svg {
-      width: 28px;
-      height: 28px;
+    .star-display svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Stars inside the rating widget should shrink to fit */
+    .rating-widget .star-display {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .rating-widget .star-display svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .rating-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .rating-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--gold);
+      cursor: pointer;
+      border: 2px solid var(--card);
+      box-shadow: 0 0 6px rgba(245, 197, 24, 0.4);
       transition: transform 0.15s;
     }
 
-    .star-btn:hover svg { transform: scale(1.2); }
-
-    .star-btn .star-half-left,
-    .star-btn .star-half-right {
-      position: absolute;
-      top: 0;
-      width: 50%;
-      height: 100%;
-      z-index: 1;
-      cursor: pointer;
+    .rating-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
     }
 
-    .star-btn .star-half-left { left: 0; }
-    .star-btn .star-half-right { right: 0; }
+    .rating-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--gold);
+      cursor: pointer;
+      border: 2px solid var(--card);
+      box-shadow: 0 0 6px rgba(245, 197, 24, 0.4);
+    }
 
     .rating-display {
-      font-size: 1rem;
-      font-weight: 600;
+      font-size: 1.1rem;
+      font-weight: 700;
       color: var(--gold);
-      min-width: 2rem;
+      min-width: 2.5rem;
       text-align: center;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      padding: 0 2px;
     }
 
     .confirm-rating-btn {
@@ -688,6 +796,185 @@
       font-weight: 400;
     }
 
+    /* Attendance Table */
+    .attendance-container {
+      padding: 1.5rem 2rem;
+    }
+
+    .attendance-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .attendance-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+    }
+
+    .attendance-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .attendance-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 800px;
+    }
+
+    .attendance-table th,
+    .attendance-table td {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .attendance-table th {
+      background: var(--card);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    .attendance-table td {
+      background: var(--bg);
+    }
+
+    .attendance-table tr:hover td {
+      background: var(--card);
+    }
+
+    .attendance-actions {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .att-val {
+      display: inline-block;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .att-val.yy { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+    .att-val.yn { background: rgba(245, 197, 24, 0.15); color: var(--gold); }
+    .att-val.ny { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+    .att-val.nn { background: rgba(233, 69, 96, 0.15); color: var(--accent); }
+    .att-val.na { background: rgba(136, 136, 160, 0.1); color: var(--text-muted); }
+
+    /* Attendance Legend */
+    .attendance-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding: 0.75rem 1rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8rem;
+    }
+
+    .legend-title {
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      width: 100%;
+      margin-bottom: 0.15rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-desc {
+      color: var(--text-muted);
+    }
+
+    /* Fees Table */
+    .fees-container {
+      padding: 1.5rem 2rem;
+    }
+
+    .fees-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .fees-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+    }
+
+    .fees-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .fees-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .fees-table th,
+    .fees-table td {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .fees-table th {
+      background: var(--card);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .fees-table td {
+      background: var(--bg);
+    }
+
+    .fees-table tr:hover td {
+      background: var(--card);
+    }
+
+    .fees-total {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .fees-zero {
+      color: var(--success);
+    }
+
+    .fees-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
     /* Animations */
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(20px); }
@@ -708,16 +995,41 @@
     @media (max-width: 768px) {
       .header { padding: 1rem; }
       .header-title { font-size: 1.2rem; }
-      .stats-bar { padding: 1rem; gap: 0.75rem; }
+      .stats-bar { padding: 1rem; gap: 0.75rem; grid-template-columns: 1fr; }
       .controls-bar { padding: 0 1rem 1rem; }
       .book-grid { padding: 0 1rem 1rem; grid-template-columns: 1fr; }
+      .attendance-container { padding: 1rem; }
+      .fees-container { padding: 1rem; }
+      .tab-bar { padding: 0 1rem; overflow-x: auto; }
+      .tab-btn { white-space: nowrap; padding: 0.75rem 1rem; font-size: 0.85rem; }
+      .attendance-legend { gap: 0.5rem; font-size: 0.75rem; padding: 0.6rem 0.75rem; }
+      .fees-summary { grid-template-columns: 1fr 1fr; }
+      .avg-stars svg { width: 13px; height: 13px; }
     }
 
     @media (max-width: 480px) {
       .header { flex-direction: column; align-items: flex-start; }
       .header-right { width: 100%; flex-wrap: wrap; }
       .member-select { flex: 1; }
-      .stats-bar { grid-template-columns: 1fr 1fr; }
+      .signout-btn { flex-shrink: 0; }
+      .stats-bar { grid-template-columns: 1fr; }
+      .stat-value { white-space: normal; font-size: 0.95rem; }
+      .controls-bar { gap: 0.5rem; }
+      .search-input { min-width: 100%; }
+      .filter-select, .sort-select { flex: 1; min-width: 0; }
+      .btn-accent { width: 100%; text-align: center; }
+      .book-card-top { gap: 0.75rem; padding: 1rem; }
+      .book-cover, .book-cover-placeholder { width: 60px; height: 90px; }
+      .book-title { font-size: 1rem; }
+      .avg-number { font-size: 1.2rem; }
+      .book-card-bottom { padding: 0 1rem 1rem; }
+      .avg-stars svg { width: 11px; height: 11px; }
+      .rating-widget .star-display svg { width: 12px; height: 12px; }
+      .signin-card { padding: 2rem 1.5rem; }
+      .signin-card h1 { font-size: 1.8rem; }
+      .modal { padding: 1.5rem; margin: 0.5rem; }
+      .attendance-legend { flex-direction: column; gap: 0.35rem; }
+      .fees-summary { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -726,7 +1038,7 @@
   <!-- Sign-in Screen -->
   <div class="signin-screen" id="signinScreen">
     <div class="signin-card">
-      <h1>Book Club</h1>
+      <h1>Bookchela</h1>
       <p>Sign in with Google to rate books and see everyone's picks.</p>
       <button class="signin-btn" id="signinBtn" onclick="handleSignIn()">
         <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
@@ -739,38 +1051,89 @@
   <div class="app" id="app">
     <!-- Header -->
     <header class="header">
-      <div class="header-title">Book Club</div>
+      <div class="header-title">Bookchela</div>
       <div class="header-right">
-        <select class="member-select" id="memberSelect" onchange="handleMemberChange()">
+        <select class="member-select" id="memberSelect" onchange="handleMemberChange()" disabled>
           <option value="">Select member...</option>
         </select>
         <button class="signout-btn" onclick="handleSignOut()">Sign Out</button>
       </div>
     </header>
+    <div id="memberError"></div>
 
-    <!-- Stats -->
-    <div class="stats-bar" id="statsBar"></div>
-
-    <!-- Controls -->
-    <div class="controls-bar">
-      <input class="search-input" type="text" id="searchInput" placeholder="Search books..." oninput="renderBooks()">
-      <select class="filter-select" id="filterSelect" onchange="renderBooks()">
-        <option value="all">All</option>
-        <option value="fiction">Fiction</option>
-        <option value="non-fiction">Non-fiction</option>
-      </select>
-      <select class="sort-select" id="sortSelect" onchange="renderBooks()">
-        <option value="rank">By Rank</option>
-        <option value="title">By Title</option>
-        <option value="highest">Highest Rated</option>
-        <option value="lowest">Lowest Rated</option>
-        <option value="unrated">Unrated by Me</option>
-      </select>
-      <button class="btn btn-accent" onclick="openModal('addBookModal')">+ Add Book</button>
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabRatings" onclick="switchTab('ratings')">Ratings</button>
+      <button class="tab-btn" id="tabAttendance" onclick="switchTab('attendance')">Attendance</button>
+      <button class="tab-btn" id="tabFees" onclick="switchTab('fees')">Fees</button>
     </div>
 
-    <!-- Book Grid -->
-    <div class="book-grid" id="bookGrid"></div>
+    <!-- Ratings View -->
+    <div id="ratingsView">
+      <!-- Stats -->
+      <div class="stats-bar" id="statsBar"></div>
+
+      <!-- Controls -->
+      <div class="controls-bar">
+        <input class="search-input" type="text" id="searchInput" placeholder="Search books..." oninput="renderBooks()">
+        <select class="filter-select" id="filterSelect" onchange="renderBooks()">
+          <option value="all">All</option>
+          <option value="fiction">Fiction</option>
+          <option value="non-fiction">Non-fiction</option>
+        </select>
+        <select class="sort-select" id="sortSelect" onchange="renderBooks()">
+          <option value="rank">By Rank</option>
+          <option value="title">By Title</option>
+          <option value="highest">Highest Rated</option>
+          <option value="lowest">Lowest Rated</option>
+          <option value="unrated">Unrated by Me</option>
+        </select>
+        <button class="btn btn-accent" onclick="openModal('addBookModal')">+ Add Book</button>
+      </div>
+
+      <!-- Book Grid -->
+      <div class="book-grid" id="bookGrid"></div>
+    </div>
+
+    <!-- Attendance View -->
+    <div id="attendanceView" style="display:none;">
+      <div class="attendance-container">
+        <div class="attendance-header">
+          <h2>Meeting Attendance</h2>
+          <button class="btn btn-accent" onclick="openAddMeetingModal()">+ Add Meeting</button>
+        </div>
+        <div class="attendance-legend">
+          <div class="legend-title">Legend (Attended Meeting / Read Book)</div>
+          <div class="legend-item"><span class="att-val yy">Y/Y</span> <span class="legend-desc">Attended & Read</span></div>
+          <div class="legend-item"><span class="att-val yn">Y/N</span> <span class="legend-desc">Attended, Didn't Read</span></div>
+          <div class="legend-item"><span class="att-val ny">N/Y</span> <span class="legend-desc">Didn't Attend, Read</span></div>
+          <div class="legend-item"><span class="att-val nn">N/N</span> <span class="legend-desc">Didn't Attend & Didn't Read</span></div>
+          <div class="legend-item"><span class="att-val na">N/A</span> <span class="legend-desc">Not Applicable (no penalty)</span></div>
+        </div>
+        <div class="attendance-table-wrap">
+          <table class="attendance-table" id="attendanceTable">
+            <thead><tr id="attendanceHead"></tr></thead>
+            <tbody id="attendanceBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fees View -->
+    <div id="feesView" style="display:none;">
+      <div class="fees-container">
+        <div class="fees-header">
+          <h2>Cumulative Fees</h2>
+        </div>
+        <div class="fees-summary" id="feesSummary"></div>
+        <div class="fees-table-wrap">
+          <table class="fees-table" id="feesTable">
+            <thead><tr id="feesHead"></tr></thead>
+            <tbody id="feesBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Add Book Modal -->
@@ -793,12 +1156,39 @@
     </div>
   </div>
 
+  <!-- Add/Edit Meeting Modal -->
+  <div class="modal-overlay" id="meetingModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('meetingModal')">&times;</button>
+      <h2 id="meetingModalTitle">Add Meeting</h2>
+      <div class="form-group">
+        <label for="meetingTitle">Title</label>
+        <input type="text" id="meetingTitle" placeholder="Book title">
+      </div>
+      <div class="form-group">
+        <label for="meetingChosenBy">Chosen By</label>
+        <input type="text" id="meetingChosenBy" placeholder="Who chose this book?">
+      </div>
+      <div class="form-group">
+        <label for="meetingLocation">Location</label>
+        <input type="text" id="meetingLocation" placeholder="Meeting location">
+      </div>
+      <div class="form-group">
+        <label for="meetingDate">Date</label>
+        <input type="text" id="meetingDate" placeholder="e.g. 1/15/2025">
+      </div>
+      <div id="meetingAttendanceFields"></div>
+      <input type="hidden" id="meetingEditRowIndex" value="">
+      <button class="btn btn-accent" style="width:100%;margin-top:0.5rem" onclick="handleSaveMeeting()">Save</button>
+    </div>
+  </div>
+
   <script>
     // ==================== CONFIG ====================
     const CONFIG = {
       CLIENT_ID: '351259318662-d21va0sjcu5g9qihi7ilglgjrbdk26pq.apps.googleusercontent.com',
       SPREADSHEET_ID: '1aOV6-bzK0EnxUa94ds0vkf6yaMQCgGAeo9RNS73rYmw',
-      SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
+      SCOPES: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
       DISCOVERY_DOC: 'https://sheets.googleapis.com/$discovery/rest?version=v4',
     };
 
@@ -806,11 +1196,34 @@
     let state = {
       members: [],
       books: [],
-      currentMember: localStorage.getItem('bookclub_member') || '',
+      currentMember: '',
+      userEmail: null,
+      matchedMember: null,
+      emailToMember: {},
       tokenClient: null,
       gapiInited: false,
       gisInited: false,
+      activeTab: 'ratings',
+      attendance: [],
+      attendanceSheetId: null,
+      attendanceSheetName: null,
     };
+
+    // ==================== HELPERS ====================
+    function colIndexToLetter(index) {
+      let letter = '';
+      while (index >= 0) {
+        letter = String.fromCharCode(65 + (index % 26)) + letter;
+        index = Math.floor(index / 26) - 1;
+      }
+      return letter;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
 
     // ==================== AUTH ====================
     function initGapiClient() {
@@ -843,11 +1256,23 @@
       state.tokenClient.requestAccessToken();
     }
 
-    function handleTokenResponse(resp) {
+    async function handleTokenResponse(resp) {
       if (resp.error) {
         console.error('Token error:', resp);
         return;
       }
+
+      // Fetch user email
+      try {
+        const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { Authorization: `Bearer ${resp.access_token || gapi.client.getToken().access_token}` },
+        });
+        const info = await res.json();
+        state.userEmail = (info.email || '').toLowerCase().trim();
+      } catch (e) {
+        console.error('Failed to fetch user email:', e);
+      }
+
       document.getElementById('signinScreen').style.display = 'none';
       document.getElementById('app').classList.add('visible');
       fetchSheetData();
@@ -863,6 +1288,15 @@
       document.getElementById('app').classList.remove('visible');
       state.books = [];
       state.members = [];
+      state.userEmail = null;
+      state.matchedMember = null;
+      state.emailToMember = {};
+      state.attendance = [];
+      state.currentMember = '';
+      const sel = document.getElementById('memberSelect');
+      sel.disabled = true;
+      sel.innerHTML = '<option value="">Select member...</option>';
+      hideMemberError();
     }
 
     // Retry wrapper for token expiry
@@ -872,7 +1306,7 @@
       } catch (err) {
         if (err.status === 401) {
           return new Promise((resolve, reject) => {
-            state.tokenClient.callback = (resp) => {
+            state.tokenClient.callback = async (resp) => {
               if (resp.error) return reject(resp);
               state.tokenClient.callback = handleTokenResponse;
               fn().then(resolve).catch(reject);
@@ -884,9 +1318,67 @@
       }
     }
 
+    // ==================== MEMBER ERROR ====================
+    function showMemberError(msg) {
+      const el = document.getElementById('memberError');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function hideMemberError() {
+      const el = document.getElementById('memberError');
+      el.textContent = '';
+      el.style.display = 'none';
+    }
+
+    // ==================== TABS ====================
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.getElementById('tabRatings').classList.toggle('active', tab === 'ratings');
+      document.getElementById('tabAttendance').classList.toggle('active', tab === 'attendance');
+      document.getElementById('tabFees').classList.toggle('active', tab === 'fees');
+      document.getElementById('ratingsView').style.display = tab === 'ratings' ? '' : 'none';
+      document.getElementById('attendanceView').style.display = tab === 'attendance' ? '' : 'none';
+      document.getElementById('feesView').style.display = tab === 'fees' ? '' : 'none';
+
+      if ((tab === 'attendance' || tab === 'fees') && state.attendance.length === 0) {
+        fetchAttendanceData();
+      }
+      if (tab === 'fees') {
+        renderFees();
+      }
+    }
+
     // ==================== DATA ====================
+
+    // Look up sheet metadata once (names and sheetIds)
+    async function ensureSheetMeta() {
+      if (state.attendanceSheetName) return;
+      const spreadsheet = await apiCall(() =>
+        gapi.client.sheets.spreadsheets.get({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          fields: 'sheets.properties',
+        })
+      );
+      const sheets = spreadsheet.result.sheets || [];
+      console.log('[DEBUG] All sheet tabs:', sheets.map(s => s.properties.title));
+      for (const s of sheets) {
+        const title = s.properties.title;
+        // Find the attendance sheet (any tab that isn't the main ratings sheet)
+        if (title !== 'Sheet1') {
+          state.attendanceSheetName = title;
+          state.attendanceSheetId = s.properties.sheetId;
+          console.log('[DEBUG] Attendance sheet found:', title, 'sheetId:', s.properties.sheetId);
+        }
+      }
+    }
+
     async function fetchSheetData() {
       showLoadingSkeletons();
+
+      // Ensure we know the sheet names
+      await ensureSheetMeta();
+
       const response = await apiCall(() =>
         gapi.client.sheets.spreadsheets.values.get({
           spreadsheetId: CONFIG.SPREADSHEET_ID,
@@ -895,11 +1387,52 @@
       );
 
       const rows = response.result.values || [];
-      if (rows.length < 4) return;
+      if (rows.length < 3) return;
 
-      // Row 2 (index 1) = headers
-      const headers = rows[1];
-      state.members = headers.slice(4); // columns E+ (index 4+)
+      // Auto-detect: find which row has emails (contains '@') and which has member names
+      // Scan first few rows to find the email row and the header row
+      let emailRowIdx = -1;
+      let headerRowIdx = -1;
+      for (let r = 0; r < Math.min(rows.length, 5); r++) {
+        const row = rows[r];
+        // Check columns E+ (index 4+) for email-like values
+        const hasEmails = row.slice(4).some(cell => typeof cell === 'string' && cell.includes('@'));
+        const hasNames = row.slice(4).some(cell => typeof cell === 'string' && /^[A-Z]{2,}$/.test(cell.trim()));
+        if (hasEmails && emailRowIdx === -1) emailRowIdx = r;
+        if (hasNames && headerRowIdx === -1) headerRowIdx = r;
+      }
+
+      console.log('[DEBUG] Detected email row index:', emailRowIdx, 'header row index:', headerRowIdx);
+      console.log('[DEBUG] Email row data:', JSON.stringify(rows[emailRowIdx]));
+      console.log('[DEBUG] Header row data:', JSON.stringify(rows[headerRowIdx]));
+
+      if (headerRowIdx === -1) {
+        // Fallback: assume row 2 (index 1) is headers
+        headerRowIdx = 1;
+      }
+      if (emailRowIdx === -1) {
+        // Fallback: assume row directly above headers
+        emailRowIdx = Math.max(0, headerRowIdx - 1);
+      }
+
+      const emailRow = rows[emailRowIdx];
+      const headers = rows[headerRowIdx];
+      state.members = headers.slice(4);
+
+      console.log('[DEBUG] Members parsed:', state.members);
+      console.log('[DEBUG] User email from Google:', JSON.stringify(state.userEmail));
+
+      // Build email-to-member mapping
+      state.emailToMember = {};
+      state.members.forEach((name, j) => {
+        const raw = emailRow[4 + j];
+        const email = (raw || '').toLowerCase().trim();
+        console.log(`[DEBUG] Col ${colIndexToLetter(4 + j)}: raw=${JSON.stringify(raw)} -> email=${JSON.stringify(email)} -> member=${name}`);
+        if (email && email.includes('@')) {
+          state.emailToMember[email] = name;
+        }
+      });
+      console.log('[DEBUG] emailToMember map:', state.emailToMember);
 
       // Populate member dropdown
       const sel = document.getElementById('memberSelect');
@@ -911,22 +1444,34 @@
         sel.appendChild(opt);
       });
 
-      if (state.currentMember && state.members.includes(state.currentMember)) {
-        sel.value = state.currentMember;
+      // Auto-match member by email
+      hideMemberError();
+      if (state.userEmail && state.emailToMember[state.userEmail]) {
+        state.matchedMember = state.emailToMember[state.userEmail];
+        state.currentMember = state.matchedMember;
+        sel.value = state.matchedMember;
+        sel.disabled = true;
+      } else if (state.userEmail) {
+        showMemberError(`Your email (${state.userEmail}) is not associated with any member. Rating is disabled.`);
+        state.matchedMember = null;
+        state.currentMember = '';
+        sel.value = '';
+        sel.disabled = true;
       }
 
-      // Parse books from rows 4+ (index 3+)
+      // Data rows start after the header row, skipping the OVERALL summary row
+      const dataStartIdx = headerRowIdx + 2;
       state.books = [];
-      for (let i = 3; i < rows.length; i++) {
+      for (let i = dataStartIdx; i < rows.length; i++) {
         const row = rows[i];
-        if (!row[0]) continue; // skip empty rows
+        if (!row[0]) continue;
         const ratings = {};
         state.members.forEach((member, j) => {
           const val = row[4 + j];
           ratings[member] = val ? parseFloat(val) : null;
         });
         state.books.push({
-          rowIndex: i + 1, // 1-indexed for Sheets
+          rowIndex: i + 1,
           title: row[0] || '',
           category: row[1] || '',
           rank: row[2] ? parseFloat(row[2]) : null,
@@ -941,7 +1486,7 @@
 
     async function submitRating(bookRowIndex, memberName, value) {
       const colIndex = 4 + state.members.indexOf(memberName);
-      const colLetter = String.fromCharCode(65 + colIndex);
+      const colLetter = colIndexToLetter(colIndex);
       const range = `Sheet1!${colLetter}${bookRowIndex}`;
 
       await apiCall(() =>
@@ -953,17 +1498,14 @@
         })
       );
 
-      // Optimistic update
       const book = state.books.find(b => b.rowIndex === bookRowIndex);
       if (book) book.ratings[memberName] = value;
 
       fireConfetti();
       renderBooks();
 
-      // Re-fetch for fresh averages
       await fetchSheetData();
 
-      // Check if all rated
       if (state.currentMember) {
         const allRated = state.books.every(b => b.ratings[state.currentMember] != null);
         if (allRated) {
@@ -992,6 +1534,335 @@
       await fetchSheetData();
     }
 
+    // ==================== ATTENDANCE DATA ====================
+    async function fetchAttendanceData() {
+      await ensureSheetMeta();
+      if (!state.attendanceSheetName) {
+        console.error('[DEBUG] No attendance sheet found in spreadsheet.');
+        state.attendance = [];
+        renderAttendance();
+        return;
+      }
+
+      const sheetName = state.attendanceSheetName;
+      console.log('[DEBUG] Fetching attendance from sheet:', sheetName);
+
+      let response;
+      try {
+        response = await apiCall(() =>
+          gapi.client.sheets.spreadsheets.values.get({
+            spreadsheetId: CONFIG.SPREADSHEET_ID,
+            range: `'${sheetName}'!A1:L200`,
+          })
+        );
+      } catch (err) {
+        console.error('[DEBUG] Failed to fetch attendance sheet:', err);
+        state.attendance = [];
+        renderAttendance();
+        return;
+      }
+
+      const rows = response.result.values || [];
+      console.log('[DEBUG] Attendance sheet rows:', rows.length, 'First 3 rows:', JSON.stringify(rows.slice(0, 3)));
+
+      // Auto-detect header row (the one with TITLE, DATE, etc.)
+      let headerRowIdx = -1;
+      for (let r = 0; r < Math.min(rows.length, 5); r++) {
+        const row = rows[r];
+        if (row && row[0] && /title/i.test(row[0])) {
+          headerRowIdx = r;
+          break;
+        }
+      }
+      if (headerRowIdx === -1) {
+        // Fallback: assume row 2 (index 1)
+        headerRowIdx = 1;
+      }
+      console.log('[DEBUG] Attendance header row index:', headerRowIdx);
+
+      const dataStartIdx = headerRowIdx + 1;
+      state.attendance = [];
+      for (let i = dataStartIdx; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row[0]) continue;
+        const values = {};
+        state.members.forEach((member, j) => {
+          values[member] = row[4 + j] || '';
+        });
+        state.attendance.push({
+          rowIndex: i + 1, // 1-indexed for Sheets API
+          title: row[0] || '',
+          chosenBy: row[1] || '',
+          location: row[2] || '',
+          date: row[3] || '',
+          values,
+        });
+      }
+
+      console.log('[DEBUG] Parsed attendance meetings:', state.attendance.length);
+      renderAttendance();
+      if (state.activeTab === 'fees') renderFees();
+    }
+
+    function renderAttendance() {
+      const head = document.getElementById('attendanceHead');
+      const body = document.getElementById('attendanceBody');
+
+      // Header
+      let headHtml = '<th>Title</th><th>Chosen By</th><th>Location</th><th>Date</th>';
+      state.members.forEach(m => {
+        headHtml += `<th>${escapeHtml(m)}</th>`;
+      });
+      headHtml += '<th>Actions</th>';
+      head.innerHTML = headHtml;
+
+      // Body
+      if (state.attendance.length === 0) {
+        body.innerHTML = `<tr><td colspan="${4 + state.members.length + 1}" style="text-align:center;color:var(--text-muted);padding:2rem;">No meetings found.</td></tr>`;
+        return;
+      }
+
+      let bodyHtml = '';
+      state.attendance.forEach(meeting => {
+        bodyHtml += '<tr>';
+        bodyHtml += `<td>${escapeHtml(meeting.title)}</td>`;
+        bodyHtml += `<td>${escapeHtml(meeting.chosenBy)}</td>`;
+        bodyHtml += `<td>${escapeHtml(meeting.location)}</td>`;
+        bodyHtml += `<td>${escapeHtml(meeting.date)}</td>`;
+        state.members.forEach(m => {
+          const val = meeting.values[m] || '';
+          const cls = attValClass(val);
+          bodyHtml += `<td>${val ? `<span class="att-val ${cls}">${escapeHtml(val)}</span>` : ''}</td>`;
+        });
+        bodyHtml += `<td class="attendance-actions">
+          <button class="btn btn-outline btn-sm" onclick="openEditMeetingModal(${meeting.rowIndex})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="handleDeleteMeeting(${meeting.rowIndex})">Delete</button>
+        </td>`;
+        bodyHtml += '</tr>';
+      });
+      body.innerHTML = bodyHtml;
+    }
+
+    function calcFee(val) {
+      const v = (val || '').toUpperCase().replace(/\s/g, '');
+      if (v === 'N/A' || v === '') return 0;
+      let fee = 0;
+      if (v === 'N/N') fee = 30;
+      else if (v === 'Y/N') fee = 15; // didn't read
+      else if (v === 'N/Y') fee = 15; // didn't attend
+      // Y/Y = 0
+      return fee;
+    }
+
+    function renderFees() {
+      const head = document.getElementById('feesHead');
+      const body = document.getElementById('feesBody');
+      const summary = document.getElementById('feesSummary');
+
+      // Build cumulative totals per member
+      const totals = {};
+      state.members.forEach(m => { totals[m] = 0; });
+
+      state.attendance.forEach(meeting => {
+        state.members.forEach(m => {
+          totals[m] += calcFee(meeting.values[m]);
+        });
+      });
+
+      // Summary cards
+      let summaryHtml = '';
+      state.members.forEach(m => {
+        const total = totals[m];
+        const cls = total === 0 ? 'fees-zero' : 'fees-total';
+        summaryHtml += `
+          <div class="stat-card">
+            <div class="stat-label">${escapeHtml(m)}</div>
+            <div class="stat-value ${cls}">$${total}</div>
+          </div>`;
+      });
+      summary.innerHTML = summaryHtml;
+
+      // Table header
+      let headHtml = '<th>Meeting</th><th>Date</th>';
+      state.members.forEach(m => {
+        headHtml += `<th>${escapeHtml(m)}</th>`;
+      });
+      head.innerHTML = headHtml;
+
+      // Table body - one row per meeting showing fees
+      if (state.attendance.length === 0) {
+        body.innerHTML = `<tr><td colspan="${2 + state.members.length}" style="text-align:center;color:var(--text-muted);padding:2rem;">No meetings found.</td></tr>`;
+        return;
+      }
+
+      let bodyHtml = '';
+      state.attendance.forEach(meeting => {
+        bodyHtml += '<tr>';
+        bodyHtml += `<td>${escapeHtml(meeting.title)}</td>`;
+        bodyHtml += `<td>${escapeHtml(meeting.date)}</td>`;
+        state.members.forEach(m => {
+          const fee = calcFee(meeting.values[m]);
+          const val = (meeting.values[m] || '').toUpperCase().replace(/\s/g, '');
+          if (val === 'N/A' || val === '') {
+            bodyHtml += `<td style="color:var(--text-muted)">—</td>`;
+          } else if (fee === 0) {
+            bodyHtml += `<td class="fees-zero">$0</td>`;
+          } else {
+            bodyHtml += `<td class="fees-total">$${fee}</td>`;
+          }
+        });
+        bodyHtml += '</tr>';
+      });
+
+      // Totals row
+      bodyHtml += '<tr style="border-top:2px solid var(--border);">';
+      bodyHtml += '<td style="font-weight:700;">Total</td><td></td>';
+      state.members.forEach(m => {
+        const total = totals[m];
+        const cls = total === 0 ? 'fees-zero' : 'fees-total';
+        bodyHtml += `<td class="${cls}" style="font-weight:700;">$${total}</td>`;
+      });
+      bodyHtml += '</tr>';
+
+      body.innerHTML = bodyHtml;
+    }
+
+    function attValClass(val) {
+      const v = (val || '').toUpperCase().replace(/\s/g, '');
+      if (v === 'Y/Y') return 'yy';
+      if (v === 'Y/N') return 'yn';
+      if (v === 'N/Y') return 'ny';
+      if (v === 'N/N') return 'nn';
+      if (v === 'N/A') return 'na';
+      return '';
+    }
+
+    // ==================== ATTENDANCE CRUD ====================
+    function buildAttendanceFields(existing) {
+      const container = document.getElementById('meetingAttendanceFields');
+      let html = '';
+      state.members.forEach(member => {
+        const val = existing ? (existing[member] || '') : '';
+        html += `
+          <div class="form-group">
+            <label>${escapeHtml(member)}</label>
+            <select id="att-${member.replace(/\s/g, '_')}">
+              <option value="" ${val === '' ? 'selected' : ''}>(blank)</option>
+              <option value="Y/Y" ${val === 'Y/Y' ? 'selected' : ''}>Y/Y</option>
+              <option value="Y/N" ${val === 'Y/N' ? 'selected' : ''}>Y/N</option>
+              <option value="N/Y" ${val === 'N/Y' ? 'selected' : ''}>N/Y</option>
+              <option value="N/N" ${val === 'N/N' ? 'selected' : ''}>N/N</option>
+              <option value="N/A" ${val === 'N/A' ? 'selected' : ''}>N/A</option>
+            </select>
+          </div>`;
+      });
+      container.innerHTML = html;
+    }
+
+    function openAddMeetingModal() {
+      document.getElementById('meetingModalTitle').textContent = 'Add Meeting';
+      document.getElementById('meetingTitle').value = '';
+      document.getElementById('meetingChosenBy').value = '';
+      document.getElementById('meetingLocation').value = '';
+      document.getElementById('meetingDate').value = '';
+      document.getElementById('meetingEditRowIndex').value = '';
+      buildAttendanceFields(null);
+      openModal('meetingModal');
+    }
+
+    function openEditMeetingModal(rowIndex) {
+      const meeting = state.attendance.find(m => m.rowIndex === rowIndex);
+      if (!meeting) return;
+      document.getElementById('meetingModalTitle').textContent = 'Edit Meeting';
+      document.getElementById('meetingTitle').value = meeting.title;
+      document.getElementById('meetingChosenBy').value = meeting.chosenBy;
+      document.getElementById('meetingLocation').value = meeting.location;
+      document.getElementById('meetingDate').value = meeting.date;
+      document.getElementById('meetingEditRowIndex').value = rowIndex;
+      buildAttendanceFields(meeting.values);
+      openModal('meetingModal');
+    }
+
+    function getMeetingFormData() {
+      const row = [
+        document.getElementById('meetingTitle').value.trim(),
+        document.getElementById('meetingChosenBy').value.trim(),
+        document.getElementById('meetingLocation').value.trim(),
+        document.getElementById('meetingDate').value.trim(),
+      ];
+      state.members.forEach(member => {
+        const sel = document.getElementById(`att-${member.replace(/\s/g, '_')}`);
+        row.push(sel ? sel.value : '');
+      });
+      return row;
+    }
+
+    async function handleSaveMeeting() {
+      const rowData = getMeetingFormData();
+      if (!rowData[0]) return; // require title
+
+      const editRowIndex = document.getElementById('meetingEditRowIndex').value;
+
+      const sheetName = state.attendanceSheetName;
+      if (editRowIndex) {
+        // UPDATE existing row
+        const lastCol = colIndexToLetter(3 + state.members.length);
+        const range = `'${sheetName}'!A${editRowIndex}:${lastCol}${editRowIndex}`;
+        await apiCall(() =>
+          gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: CONFIG.SPREADSHEET_ID,
+            range: range,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [rowData] },
+          })
+        );
+      } else {
+        // APPEND new row
+        await apiCall(() =>
+          gapi.client.sheets.spreadsheets.values.append({
+            spreadsheetId: CONFIG.SPREADSHEET_ID,
+            range: `'${sheetName}'!A:L`,
+            valueInputOption: 'USER_ENTERED',
+            insertDataOption: 'INSERT_ROWS',
+            resource: { values: [rowData] },
+          })
+        );
+      }
+
+      closeModal('meetingModal');
+      await fetchAttendanceData();
+    }
+
+    async function handleDeleteMeeting(rowIndex) {
+      if (!confirm('Are you sure you want to delete this meeting?')) return;
+
+      await ensureSheetMeta();
+      if (state.attendanceSheetId == null) {
+        alert('Attendance sheet not found.');
+        return;
+      }
+
+      await apiCall(() =>
+        gapi.client.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          resource: {
+            requests: [{
+              deleteDimension: {
+                range: {
+                  sheetId: state.attendanceSheetId,
+                  dimension: 'ROWS',
+                  startIndex: rowIndex - 1, // 0-indexed
+                  endIndex: rowIndex,
+                },
+              },
+            }],
+          },
+        })
+      );
+
+      await fetchAttendanceData();
+    }
+
     // ==================== RENDERING ====================
     function showLoadingSkeletons() {
       const grid = document.getElementById('bookGrid');
@@ -1014,19 +1885,16 @@
 
       let books = [...state.books];
 
-      // Search
       if (query) {
         books = books.filter(b => b.title.toLowerCase().includes(query));
       }
 
-      // Filter
       if (filter === 'fiction') {
         books = books.filter(b => b.category.toLowerCase().includes('fiction') && !b.category.toLowerCase().includes('non'));
       } else if (filter === 'non-fiction') {
         books = books.filter(b => b.category.toLowerCase().includes('non'));
       }
 
-      // Sort
       switch (sort) {
         case 'rank':
           books.sort((a, b) => (a.rank || 999) - (b.rank || 999));
@@ -1075,16 +1943,14 @@
       const isHotTake = userRating != null && avg != null && Math.abs(userRating - avg) >= 3;
       const rankClass = book.rank && book.rank <= 3 ? 'top3' : '';
 
-      // Stars for average
-      const starCount = avg != null ? Math.round(avg) : 0;
-      const starsHtml = avg != null
-        ? '&#9733;'.repeat(Math.min(starCount, 10)) + '&#9734;'.repeat(Math.max(10 - starCount, 0))
-        : '';
+      const starsHtml = avg != null ? buildDisplayStars(avg, `avg-${book.rowIndex}`) : '';
 
       const gradient = coverGradients[book.title.length % coverGradients.length];
       const firstLetter = book.title.charAt(0).toUpperCase();
       const encodedTitle = encodeURIComponent(book.title);
       const coverId = `cover-${book.rowIndex}`;
+
+      const canRate = !!state.matchedMember;
 
       card.innerHTML = `
         <div class="book-card-top">
@@ -1100,7 +1966,7 @@
             ${book.category ? `<div class="book-category">${escapeHtml(book.category)}</div>` : ''}
             <div class="book-average">
               <span class="avg-number">${avg != null ? avg.toFixed(1) : '—'}</span>
-              <span class="avg-stars">${starsHtml}</span>
+              <span class="avg-stars star-display">${starsHtml}</span>
               ${avg != null ? '<span class="avg-label">avg</span>' : ''}
             </div>
           </div>
@@ -1114,12 +1980,12 @@
                 : ''}
               ${isHotTake ? '<span class="hot-take">HOT TAKE</span>' : ''}
             </div>
-            ${member
+            ${canRate
               ? userRating != null
                 ? `<div class="tap-to-rate" onclick="toggleRatingWidget(this, ${book.rowIndex})">Tap to change</div>`
                 : `<div class="tap-to-rate" onclick="toggleRatingWidget(this, ${book.rowIndex})">Tap to rate</div>`
               : '<div style="color:var(--text-muted);font-size:0.8rem;">Select a member to rate</div>'}
-            ${member && userRating != null && avg != null ? `
+            ${canRate && userRating != null && avg != null ? `
               <div class="comparison-bar">
                 <div class="comparison-avg-marker" style="left:${(avg / 10) * 100}%"></div>
                 <div class="comparison-user-marker" style="left:${(userRating / 10) * 100}%"></div>
@@ -1136,34 +2002,40 @@
       return card;
     }
 
-    function buildStarWidget(rowIndex, existingRating) {
-      let html = '<div class="star-row">';
+    function buildDisplayStars(value, idPrefix) {
+      let html = '';
       for (let i = 1; i <= 10; i++) {
-        const full = existingRating != null && i <= Math.floor(existingRating);
-        const half = existingRating != null && i === Math.ceil(existingRating) && existingRating % 1 !== 0;
-        html += `
-          <button class="star-btn" data-star="${i}">
-            <svg viewBox="0 0 24 24">
-              ${full || half ? `
-                <defs>
-                  <linearGradient id="sg-${rowIndex}-${i}">
-                    <stop offset="${half ? '50%' : '100%'}" stop-color="#f5c518"/>
-                    <stop offset="${half ? '50%' : '100%'}" stop-color="#3a3a50"/>
-                  </linearGradient>
-                </defs>
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#sg-${rowIndex}-${i})" stroke="#f5c518" stroke-width="0.5"/>
-              ` : `
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#3a3a50" stroke="#555" stroke-width="0.5"/>
-              `}
-            </svg>
-            <span class="star-half-left" onclick="event.stopPropagation();setPreviewRating(${rowIndex},${i - 0.5})"></span>
-            <span class="star-half-right" onclick="event.stopPropagation();setPreviewRating(${rowIndex},${i})"></span>
-          </button>`;
+        const fillPct = Math.min(Math.max((value - (i - 1)) * 100, 0), 100);
+        html += `<svg viewBox="0 0 24 24">
+          <defs><linearGradient id="ds-${idPrefix}-${i}">
+            <stop offset="${fillPct}%" stop-color="#f5c518"/>
+            <stop offset="${fillPct}%" stop-color="#3a3a50"/>
+          </linearGradient></defs>
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#ds-${idPrefix}-${i})" stroke="${fillPct > 0 ? '#f5c518' : '#555'}" stroke-width="0.5"/>
+        </svg>`;
       }
-      html += '</div>';
-      html += `<div class="rating-display" id="rd-${rowIndex}">${existingRating != null ? existingRating.toFixed(1) : '—'}</div>`;
+      return html;
+    }
+
+    function buildStarWidget(rowIndex, existingRating) {
+      const val = existingRating != null ? existingRating : 5;
+      let html = `<div class="slider-row">
+        <input type="range" class="rating-slider" id="rs-${rowIndex}" min="0.5" max="10" step="0.5" value="${val}" oninput="updateSliderPreview(${rowIndex}, this.value)">
+        <div class="rating-display" id="rd-${rowIndex}">${existingRating != null ? existingRating.toFixed(1) : val.toFixed(1)}</div>
+      </div>`;
+      html += `<div class="star-display" id="sw-${rowIndex}">${buildDisplayStars(val, 'sw-' + rowIndex)}</div>`;
+      html += `<div class="slider-labels"><span>0.5</span><span>5</span><span>10</span></div>`;
       html += `<button class="confirm-rating-btn" onclick="confirmRating(${rowIndex})">Confirm</button>`;
       return html;
+    }
+
+    function updateSliderPreview(rowIndex, value) {
+      value = parseFloat(value);
+      pendingRatings[rowIndex] = value;
+      const display = document.getElementById(`rd-${rowIndex}`);
+      if (display) display.textContent = value.toFixed(1);
+      const starContainer = document.getElementById(`sw-${rowIndex}`);
+      if (starContainer) starContainer.innerHTML = buildDisplayStars(value, 'sw-' + rowIndex);
     }
 
     function buildVotesPanel(book) {
@@ -1205,32 +2077,12 @@
       widget.classList.toggle('open');
     }
 
-    function setPreviewRating(rowIndex, value) {
-      pendingRatings[rowIndex] = value;
-      const display = document.getElementById(`rd-${rowIndex}`);
-      if (display) display.textContent = value.toFixed(1);
-
-      // Update star visuals
-      const widget = document.getElementById(`rw-${rowIndex}`);
-      const stars = widget.querySelectorAll('.star-btn');
-      stars.forEach((btn, idx) => {
-        const starNum = idx + 1;
-        const svg = btn.querySelector('svg');
-        const full = starNum <= Math.floor(value);
-        const half = starNum === Math.ceil(value) && value % 1 !== 0;
-        if (full) {
-          svg.innerHTML = `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#f5c518" stroke="#f5c518" stroke-width="0.5"/>`;
-        } else if (half) {
-          svg.innerHTML = `
-            <defs><linearGradient id="sp-${rowIndex}-${starNum}"><stop offset="50%" stop-color="#f5c518"/><stop offset="50%" stop-color="#3a3a50"/></linearGradient></defs>
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#sp-${rowIndex}-${starNum})" stroke="#f5c518" stroke-width="0.5"/>`;
-        } else {
-          svg.innerHTML = `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="#3a3a50" stroke="#555" stroke-width="0.5"/>`;
-        }
-      });
-    }
-
     async function confirmRating(rowIndex) {
+      // If no pending rating from slider, read current slider value
+      if (pendingRatings[rowIndex] == null) {
+        const slider = document.getElementById(`rs-${rowIndex}`);
+        if (slider) pendingRatings[rowIndex] = parseFloat(slider.value);
+      }
       const value = pendingRatings[rowIndex];
       if (value == null || !state.currentMember) return;
       delete pendingRatings[rowIndex];
@@ -1243,13 +2095,11 @@
       const member = state.currentMember;
       const books = state.books;
 
-      // Books rated
       let ratedCount = 0;
       if (member) {
         ratedCount = books.filter(b => b.ratings[member] != null).length;
       }
 
-      // Highest rated
       const withAvg = books.filter(b => b.average != null && !isNaN(b.average));
       const highest = withAvg.length ? withAvg.reduce((a, b) => a.average > b.average ? a : b) : null;
       const lowest = withAvg.length ? withAvg.reduce((a, b) => a.average < b.average ? a : b) : null;
@@ -1272,7 +2122,6 @@
     function handleMemberChange() {
       const sel = document.getElementById('memberSelect');
       state.currentMember = sel.value;
-      localStorage.setItem('bookclub_member', sel.value);
       renderStats();
       renderBooks();
     }
@@ -1286,7 +2135,6 @@
       document.getElementById(id).classList.remove('open');
     }
 
-    // Close modal on overlay click
     document.addEventListener('click', (e) => {
       if (e.target.classList.contains('modal-overlay')) {
         e.target.classList.remove('open');
@@ -1306,13 +2154,6 @@
       } else {
         confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 }, colors });
       }
-    }
-
-    // ==================== UTILS ====================
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
     }
 
     // ==================== INIT ====================
