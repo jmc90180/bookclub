@@ -1066,6 +1066,7 @@
       <button class="tab-btn active" id="tabRatings" onclick="switchTab('ratings')">Ratings</button>
       <button class="tab-btn" id="tabAttendance" onclick="switchTab('attendance')">Attendance</button>
       <button class="tab-btn" id="tabFees" onclick="switchTab('fees')">Fees</button>
+      <button class="tab-btn" id="tabMembers" onclick="switchTab('members')">Members</button>
     </div>
 
     <!-- Ratings View -->
@@ -1134,6 +1135,22 @@
         </div>
       </div>
     </div>
+
+    <!-- Members View -->
+    <div id="membersView" style="display:none;">
+      <div class="attendance-container">
+        <div class="attendance-header">
+          <h2>Club Members</h2>
+          <button class="btn btn-accent" onclick="openAddMemberModal()">+ Add Member</button>
+        </div>
+        <div class="attendance-table-wrap">
+          <table class="attendance-table" id="membersTable">
+            <thead><tr><th>Name</th><th>Email</th><th>Actions</th></tr></thead>
+            <tbody id="membersList"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Add Book Modal -->
@@ -1153,6 +1170,23 @@
         </select>
       </div>
       <button class="btn btn-accent" style="width:100%;margin-top:0.5rem" onclick="handleAddBook()">Add Book</button>
+    </div>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div class="modal-overlay" id="addMemberModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('addMemberModal')">&times;</button>
+      <h2>Add a Member</h2>
+      <div class="form-group">
+        <label for="newMemberName">Name</label>
+        <input type="text" id="newMemberName" placeholder="e.g. JANE">
+      </div>
+      <div class="form-group">
+        <label for="newMemberEmail">Email</label>
+        <input type="email" id="newMemberEmail" placeholder="jane@example.com">
+      </div>
+      <button class="btn btn-accent" style="width:100%;margin-top:0.5rem" onclick="handleAddMember()">Add Member</button>
     </div>
   </div>
 
@@ -1207,6 +1241,12 @@
       attendance: [],
       attendanceSheetId: null,
       attendanceSheetName: null,
+      ratingsSheetId: null,
+      ratingsHeaderRow: null,   // 1-based row number of the member-name header in Sheet1
+      ratingsEmailRow: null,    // 1-based row number of the email row in Sheet1
+      attendanceHeaderRow: null, // 1-based row number of the header row in the attendance sheet
+      attendanceEmailRow: null,  // 1-based row number of the email row in the attendance sheet (null if none)
+      memberEmails: [],         // aligned to state.members
     };
 
     // ==================== HELPERS ====================
@@ -1337,9 +1377,11 @@
       document.getElementById('tabRatings').classList.toggle('active', tab === 'ratings');
       document.getElementById('tabAttendance').classList.toggle('active', tab === 'attendance');
       document.getElementById('tabFees').classList.toggle('active', tab === 'fees');
+      document.getElementById('tabMembers').classList.toggle('active', tab === 'members');
       document.getElementById('ratingsView').style.display = tab === 'ratings' ? '' : 'none';
       document.getElementById('attendanceView').style.display = tab === 'attendance' ? '' : 'none';
       document.getElementById('feesView').style.display = tab === 'fees' ? '' : 'none';
+      document.getElementById('membersView').style.display = tab === 'members' ? '' : 'none';
 
       if ((tab === 'attendance' || tab === 'fees') && state.attendance.length === 0) {
         fetchAttendanceData();
@@ -1347,13 +1389,16 @@
       if (tab === 'fees') {
         renderFees();
       }
+      if (tab === 'members') {
+        renderMembers();
+      }
     }
 
     // ==================== DATA ====================
 
     // Look up sheet metadata once (names and sheetIds)
     async function ensureSheetMeta() {
-      if (state.attendanceSheetName) return;
+      if (state.attendanceSheetName && state.ratingsSheetId != null) return;
       const spreadsheet = await apiCall(() =>
         gapi.client.sheets.spreadsheets.get({
           spreadsheetId: CONFIG.SPREADSHEET_ID,
@@ -1364,8 +1409,11 @@
       console.log('[DEBUG] All sheet tabs:', sheets.map(s => s.properties.title));
       for (const s of sheets) {
         const title = s.properties.title;
-        // Find the attendance sheet (any tab that isn't the main ratings sheet)
-        if (title !== 'Sheet1') {
+        if (title === 'Sheet1') {
+          // The main ratings sheet — capture its id for column insert/delete.
+          state.ratingsSheetId = s.properties.sheetId;
+        } else {
+          // Find the attendance sheet (any tab that isn't the main ratings sheet)
           state.attendanceSheetName = title;
           state.attendanceSheetId = s.properties.sheetId;
           console.log('[DEBUG] Attendance sheet found:', title, 'sheetId:', s.properties.sheetId);
@@ -1418,6 +1466,11 @@
       const emailRow = rows[emailRowIdx];
       const headers = rows[headerRowIdx];
       state.members = headers.slice(4);
+
+      // Remember where the header/email rows live (1-based) for member add/delete.
+      state.ratingsHeaderRow = headerRowIdx + 1;
+      state.ratingsEmailRow = emailRowIdx + 1;
+      state.memberEmails = state.members.map((_, j) => (emailRow[4 + j] || ''));
 
       console.log('[DEBUG] Members parsed:', state.members);
       console.log('[DEBUG] User email from Google:', JSON.stringify(state.userEmail));
@@ -1579,6 +1632,19 @@
         headerRowIdx = 1;
       }
       console.log('[DEBUG] Attendance header row index:', headerRowIdx);
+      state.attendanceHeaderRow = headerRowIdx + 1; // 1-based, for member add/delete
+
+      // Auto-detect an email row (cells with '@' in columns E+), if the sheet has one.
+      let attEmailRowIdx = -1;
+      for (let r = 0; r < Math.min(rows.length, 5); r++) {
+        const row = rows[r];
+        if (row && row.slice(4).some(cell => typeof cell === 'string' && cell.includes('@'))) {
+          attEmailRowIdx = r;
+          break;
+        }
+      }
+      state.attendanceEmailRow = attEmailRowIdx === -1 ? null : attEmailRowIdx + 1; // 1-based or null
+      console.log('[DEBUG] Attendance email row index:', attEmailRowIdx);
 
       const dataStartIdx = headerRowIdx + 1;
       state.attendance = [];
@@ -1861,6 +1927,170 @@
       );
 
       await fetchAttendanceData();
+    }
+
+    // ==================== MEMBER MANAGEMENT ====================
+    function renderMembers() {
+      const body = document.getElementById('membersList');
+      if (!body) return;
+      if (!state.members.length) {
+        body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:2rem;">No members found.</td></tr>';
+        return;
+      }
+      body.innerHTML = state.members.map((name, j) => {
+        const email = state.memberEmails[j] || '';
+        return `<tr>
+          <td>${escapeHtml(name)}</td>
+          <td>${escapeHtml(email)}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="handleDeleteMember(${j})">Delete</button></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function openAddMemberModal() {
+      document.getElementById('newMemberName').value = '';
+      document.getElementById('newMemberEmail').value = '';
+      openModal('addMemberModal');
+    }
+
+    async function handleAddMember() {
+      const name = document.getElementById('newMemberName').value.trim();
+      const email = document.getElementById('newMemberEmail').value.trim();
+      if (!name || !email) { alert('Name and email are both required.'); return; }
+      if (!email.includes('@')) { alert('Please enter a valid email address.'); return; }
+
+      // Reject duplicates (case-insensitive)
+      if (state.members.some(m => m.toLowerCase() === name.toLowerCase())) {
+        alert(`A member named "${name}" already exists.`);
+        return;
+      }
+      if (state.emailToMember[email.toLowerCase()]) {
+        alert(`The email "${email}" is already associated with a member.`);
+        return;
+      }
+
+      await ensureSheetMeta();
+      if (state.ratingsSheetId == null || state.attendanceSheetId == null) {
+        alert('Could not locate the spreadsheet tabs. Please reload and try again.');
+        return;
+      }
+
+      // Insert the new column INSIDE the member range (at the current last member's
+      // position) so Sheets auto-extends ranged formulas (e.g. the column-D average) to
+      // include it. The existing last member shifts right to become our copy source.
+      const memberCount = state.members.length;
+      const insertIdx = 4 + memberCount;   // 0-based column index, appended at the end
+      const sourceIdx = insertIdx - 1;     // the last existing member (left neighbor)
+
+      const requests = [];
+      [state.ratingsSheetId, state.attendanceSheetId].forEach(sheetId => {
+        requests.push({
+          insertDimension: {
+            range: { sheetId, dimension: 'COLUMNS', startIndex: insertIdx, endIndex: insertIdx + 1 },
+            inheritFromBefore: true,
+          },
+        });
+        if (memberCount > 0) {
+          // Replicate the adjacent member column (formulas + formatting) into the new one.
+          requests.push({
+            copyPaste: {
+              source: { sheetId, startColumnIndex: sourceIdx, endColumnIndex: sourceIdx + 1 },
+              destination: { sheetId, startColumnIndex: insertIdx, endColumnIndex: insertIdx + 1 },
+              pasteType: 'PASTE_NORMAL',
+            },
+          });
+        }
+      });
+
+      await apiCall(() =>
+        gapi.client.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          resource: { requests },
+        })
+      );
+
+      // The copyPaste duplicated the neighbor's name/email AND their rating/attendance
+      // values. Clear the data cells (keeping the summary-row formulas) and write the new
+      // member's name + email.
+      const col = colIndexToLetter(insertIdx);
+      const data = [];
+
+      // --- Sheet1 (ratings) ---
+      if (memberCount > 0 && state.books.length) {
+        const firstBookRow = state.ratingsHeaderRow + 2; // header, summary, then books
+        const lastBookRow = Math.max(...state.books.map(b => b.rowIndex));
+        if (lastBookRow >= firstBookRow) {
+          const blanks = [];
+          for (let r = firstBookRow; r <= lastBookRow; r++) blanks.push(['']);
+          data.push({ range: `Sheet1!${col}${firstBookRow}:${col}${lastBookRow}`, values: blanks });
+        }
+      }
+      data.push({ range: `Sheet1!${col}${state.ratingsHeaderRow}`, values: [[name]] });
+      data.push({ range: `Sheet1!${col}${state.ratingsEmailRow}`, values: [[email]] });
+
+      // --- Attendance sheet ---
+      if (memberCount > 0 && state.attendance.length) {
+        const firstAttRow = state.attendanceHeaderRow + 1;
+        const lastAttRow = Math.max(...state.attendance.map(a => a.rowIndex));
+        if (lastAttRow >= firstAttRow) {
+          const blanks = [];
+          for (let r = firstAttRow; r <= lastAttRow; r++) blanks.push(['']);
+          data.push({ range: `'${state.attendanceSheetName}'!${col}${firstAttRow}:${col}${lastAttRow}`, values: blanks });
+        }
+      }
+      data.push({ range: `'${state.attendanceSheetName}'!${col}${state.attendanceHeaderRow}`, values: [[name]] });
+      // If the attendance sheet has its own email row, overwrite the copied neighbor email.
+      if (state.attendanceEmailRow) {
+        data.push({ range: `'${state.attendanceSheetName}'!${col}${state.attendanceEmailRow}`, values: [[email]] });
+      }
+
+      // Apply each value write with the proven values.update endpoint (values.batchUpdate
+      // is not available in this gapi build and 404s).
+      for (const d of data) {
+        await apiCall(() =>
+          gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: CONFIG.SPREADSHEET_ID,
+            range: d.range,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: d.values },
+          })
+        );
+      }
+
+      closeModal('addMemberModal');
+      await fetchSheetData();
+      await fetchAttendanceData();
+      renderMembers();
+    }
+
+    async function handleDeleteMember(index) {
+      const name = state.members[index];
+      if (name == null) { alert('Member not found — please reload and try again.'); return; }
+      if (!confirm(`Delete "${name}"? This permanently removes ALL of their ratings and attendance history from both sheets. This cannot be undone.`)) return;
+
+      await ensureSheetMeta();
+      if (state.ratingsSheetId == null || state.attendanceSheetId == null) {
+        alert('Could not locate the spreadsheet tabs. Please reload and try again.');
+        return;
+      }
+
+      const colIndex = 4 + index; // 0-based column index, same in both sheets
+      const requests = [state.ratingsSheetId, state.attendanceSheetId].map(sheetId => ({
+        deleteDimension: {
+          range: { sheetId, dimension: 'COLUMNS', startIndex: colIndex, endIndex: colIndex + 1 },
+        },
+      }));
+
+      await apiCall(() =>
+        gapi.client.sheets.spreadsheets.batchUpdate({
+          spreadsheetId: CONFIG.SPREADSHEET_ID,
+          resource: { requests },
+        })
+      );
+
+      await fetchSheetData();
+      await fetchAttendanceData();
+      renderMembers();
     }
 
     // ==================== RENDERING ====================
