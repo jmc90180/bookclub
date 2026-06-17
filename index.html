@@ -1382,7 +1382,7 @@
       const response = await apiCall(() =>
         gapi.client.sheets.spreadsheets.values.get({
           spreadsheetId: CONFIG.SPREADSHEET_ID,
-          range: 'Sheet1!A1:L200',
+          range: 'Sheet1!A1:Z200',
         })
       );
 
@@ -1552,7 +1552,7 @@
         response = await apiCall(() =>
           gapi.client.sheets.spreadsheets.values.get({
             spreadsheetId: CONFIG.SPREADSHEET_ID,
-            range: `'${sheetName}'!A1:L200`,
+            range: `'${sheetName}'!A1:Z200`,
           })
         );
       } catch (err) {
@@ -1821,7 +1821,7 @@
         await apiCall(() =>
           gapi.client.sheets.spreadsheets.values.append({
             spreadsheetId: CONFIG.SPREADSHEET_ID,
-            range: `'${sheetName}'!A:L`,
+            range: `'${sheetName}'!A:Z`,
             valueInputOption: 'USER_ENTERED',
             insertDataOption: 'INSERT_ROWS',
             resource: { values: [rowData] },
